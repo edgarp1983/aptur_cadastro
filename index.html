@@ -3,445 +3,666 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gerenciamento</title>
+    <title>Sistema de Gerenciamento - Promotores</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
         .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
         }
         .modal {
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modal-hidden {
             opacity: 0;
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(-10px);
             pointer-events: none;
         }
         .modal-visible {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1) translateY(0);
             pointer-events: auto;
         }
-         /* Estilos para a barra de rolagem */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f5f9;
         }
         ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
+            background: #cbd5e1;
+            border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #94a3b8;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-1px);
+        }
+        .mobile-card {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .desktop-table {
+                display: none;
+            }
+            .mobile-card {
+                display: block;
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .floating-action {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 40;
+        }
+        @media (min-width: 768px) {
+            .floating-action {
+                display: none;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
 
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="mb-8">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-700">Sistema de Gerenciamento</h1>
-            <p class="text-gray-500 mt-1">Adicione, edite, visualize e exclua registros com facilidade.</p>
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="mb-8 text-center md:text-left">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Sistema de Gerenciamento</h1>
+            <p class="text-slate-600 text-lg">Cadastro de Promotores - Nomes, Locação e Processos</p>
         </header>
 
-        <main class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <div class="relative w-full sm:w-1/3">
-                    <input type="text" id="searchInput" placeholder="Buscar por nome, locação..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto">
-                     <button id="exportCsvBtn" class="flex items-center gap-2 bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 w-full sm:w-auto justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10.4 12.6a2 2 0 0 1 3.2 0l3.4 3.4a2 2 0 0 1 0 3.2l-3.4 3.4a2 2 0 0 1-3.2 0l-3.4-3.4a2 2 0 0 1 0-3.2l3.4-3.4Z"/><path d="M16 18h2a2 2 0 0 0 2-2v-2"/><path d="M12 22h-4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v2"/></svg>
-                        <span>Exportar CSV</span>
-                    </button>
-                    <button id="exportPdfBtn" class="flex items-center gap-2 bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200 w-full sm:w-auto justify-center">
-                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M2 12h2"/><path d="M2 18h2"/><path d="M7 12h2"/><path d="M7 18h2"/><path d="M12 12h2"/><path d="M12 18h2"/></svg>
-                        <span>Exportar PDF</span>
-                    </button>
-                    <button id="addBtn" class="flex items-center gap-2 bg-blue-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 w-full sm:w-auto justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        <span>Adicionar</span>
-                    </button>
+        <main class="bg-white rounded-2xl card-shadow overflow-hidden">
+            <div class="p-4 md:p-6 border-b border-slate-200 bg-gradient-to-r from-white to-slate-50">
+                <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                    <div class="relative w-full lg:w-1/3">
+                        <input type="text" id="searchInput" placeholder="Buscar por nome, locação ou processo..." 
+                               class="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    
+                    <div class="hidden md:flex items-center gap-3">
+                        <button id="exportCsvBtn" class="flex items-center gap-2 bg-emerald-600 text-white font-medium px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-all">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            CSV
+                        </button>
+                        <button id="exportPdfBtn" class="flex items-center gap-2 bg-red-600 text-white font-medium px-4 py-2.5 rounded-xl hover:bg-red-700 transition-all">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            PDF
+                        </button>
+                        <button id="addBtn" class="btn-primary flex items-center gap-2 text-white font-semibold px-6 py-2.5 rounded-xl">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Adicionar
+                        </button>
+                    </div>
+                    
+                    <div class="flex md:hidden w-full gap-2">
+                        <button id="exportCsvBtnMobile" class="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white font-medium py-2.5 rounded-xl">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            CSV
+                        </button>
+                        <button id="exportPdfBtnMobile" class="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white font-medium py-2.5 rounded-xl">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            PDF
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tabela de dados -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-50 border-b">
+            <div class="desktop-table overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th class="p-4 font-semibold">#</th>
-                            <th class="p-4 font-semibold">Nome</th>
-                            <th class="p-4 font-semibold">Locação</th>
-                            <th class="p-4 font-semibold">Processo</th>
-                            <th class="p-4 font-semibold text-center">Ações</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">#</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Nome</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Locação</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Processo</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-slate-700">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="dataTable">
-                        <!-- Linhas de dados serão inseridas aqui via JavaScript -->
-                         <tr>
-                            <td colspan="5" class="text-center p-8">
-                                <div class="flex justify-center items-center gap-3">
-                                  <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  Carregando dados...
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="dataTable" class="divide-y divide-slate-200">
+                        </tbody>
                 </table>
-                 <p id="noResults" class="text-center p-8 text-gray-500 hidden">Nenhum registro encontrado.</p>
+            </div>
+
+            <div id="mobileCards" class="mobile-card p-4 space-y-4">
+                </div>
+
+            <div id="emptyState" class="hidden text-center py-16">
+                <svg class="mx-auto h-16 w-16 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">Nenhum registro encontrado</h3>
+                <p class="text-slate-500">Adicione um novo registro para começar</p>
             </div>
         </main>
     </div>
 
-    <!-- Modal para Adicionar/Editar -->
+    <button id="addBtnMobile" class="floating-action btn-primary w-14 h-14 rounded-full shadow-lg flex items-center justify-center">
+        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+    </button>
+
     <div id="entryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop modal modal-hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
-            <div class="p-6 border-b">
-                <h2 id="modalTitle" class="text-2xl font-bold">Adicionar Registro</h2>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div class="p-6 border-b border-slate-200">
+                <h2 id="modalTitle" class="text-2xl font-bold text-slate-800">Adicionar Registro</h2>
             </div>
             <div class="p-6">
-                <form id="entryForm">
+                <form id="entryForm" class="space-y-4">
                     <input type="hidden" id="entryId">
-                    <div class="mb-4">
-                        <label for="name" class="block mb-2 font-medium">Nome</label>
-                        <input type="text" id="name" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-slate-700 mb-2">Nome *</label>
+                        <input type="text" id="name" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
                     </div>
-                    <div class="mb-4">
-                        <label for="location" class="block mb-2 font-medium">Locação</label>
-                        <input type="text" id="location" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-slate-700 mb-2">Locação *</label>
+                        <input type="text" id="location" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
                     </div>
-                    <div class="mb-4">
-                        <label for="process" class="block mb-2 font-medium">Processo (Opcional)</label>
-                        <input type="text" id="process" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div>
+                        <label for="process" class="block text-sm font-medium text-slate-700 mb-2">Processo</label>
+                        <input type="text" id="process" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
-                    <div class="flex justify-end gap-4 mt-6">
-                        <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">Salvar</button>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 bg-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-300 transition-all">Cancelar</button>
+                        <button type="submit" class="flex-1 btn-primary text-white font-semibold px-6 py-3 rounded-xl">Salvar</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     
-    <!-- Modal de Confirmação de Exclusão -->
     <div id="deleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop modal modal-hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4">
             <div class="p-6 text-center">
-                 <svg class="mx-auto mb-4 text-red-500 w-12 h-12" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                <h3 class="mb-5 text-lg font-normal text-gray-600">Tem certeza que deseja excluir este registro?</h3>
-                 <p class="mb-6 text-sm text-gray-500">Essa ação não pode ser desfeita.</p>
-                <div class="flex justify-center gap-4">
-                    <button type="button" id="cancelDeleteBtn" class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="button" id="confirmDeleteBtn" class="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">Sim, excluir</button>
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-2">Confirmar Exclusão</h3>
+                <p class="text-slate-600 mb-6">Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</p>
+                <div class="flex gap-3">
+                    <button type="button" id="cancelDeleteBtn" class="flex-1 px-4 py-2.5 bg-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-300 transition-all">Cancelar</button>
+                    <button type="button" id="confirmDeleteBtn" class="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all">Excluir</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        // Importações do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, getDocs, onSnapshot, updateDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // Dados iniciais (ATUALIZADOS)
+        const initialData = [
+            "ADRIANA COLARES DE SOUZA LIMA - Em frente ao Bourbon Fortaleza Hotel - Processo 223834/2024",
+            "ALESSANDRO WILLAMI DE SOUSA - Em frente Feirinha da Beira Mar",
+            "ALEXANDRE RUFINO DE ARAÚJO - Em frente ao Hotel Praia Mar - Processo 234488/2024",
+            "ANA BEATRIZ COELHO - Em frente Feirinha da Beira Mar - Lado Praia",
+            "ANA PAULA DA SILVA ISIDORO - Em frente ao Hotel Beira Mar",
+            "ANA REBECA SILVA CÂMARA - Em frente ao Hotel Classic",
+            "ANIETE PEREIRA DA COSTA - Em frente ao Hotel Praiano",
+            "ANTONIO DE OLIVEIRA DA SILVA - Em frente Feirinha da Beira Mar",
+            "ANTONIA JAILSA PONTES LIMA - Em frente à Barraca da Boa - Processo 141999/2024",
+            "ANTÔNIA SARAH DA CONCEIÇÃO ALMEIDA - Em frente Feirinha da Beira Mar - Lado Praia",
+            "ANTÔNIO GEOVANE ANDRADE DE ARAÚJO - Em frente ao Hotel Gran Marquise - Processo 042390/2022",
+            "ANTÔNIO MARCOS RIBEIRO DE SOUSA - Em frente ao Hotel Praiano",
+            "ANTONIO RIVALDO DO PRADO SILVA - Em frente ao condomínio Vitral dos Mares - Processo 142454/2022",
+            "APARECIDA ALVES GOMES - Em frente ao Mercado dos Peixes - Processo 049322/2022",
+            "ATILA ALVES MARINHEIRO - Esquina do Habibs, em frente ao quiosque Vitor do Coco",
+            "AUGUSTO CEZAR DA SILVA MAGALHÃES - Em frente ao Edifício Catamarã",
+            "AURILENE ALVES DA SILVA - Em frente ao Antigo",
+            "BRUNO DANIEL RODRIGUES COUTINHO - Feirinha Beira Mar/Barraca do Baiano",
+            "BRUNO LIMA SOUZA - Pizza Hutts - Processo 204938/2024",
+            "CARLOS EMANUEL BEZERRA ALVES - Em frente à 50 Sabores - Processo 041383/2024",
+            "DARIELSON DE SOUZA SILVA - Em frente Feirinha da Beira Mar - Processo 046397/2022",
+            "DIEGO ARAÚJO FERREIRA - Em frente ao Landscape",
+            "EDGAR PAULINO FEITOSA - Em frente à Pague Menos da Praia de Iracema - Processo: 168064/2024",
+            "EDISON MARQUES DE OLIVEIRA FILHO - Em frente ao Mercado dos Peixes",
+            "EDNA MARIA DA SILVA SEMINO - Em frente à Barraca SateRuti",
+            "ELIEZER GOMES DE MELO JÚNIOR - Em frente à Pague Menos da Praia de Iracema - P12608872024",
+            "ELINEIDE NAZARÉ SODRÉ FARRAPEIRA - Em frente ao Blue Tree - Processo 126213/2024 / P133947/2025",
+            "EMÍDIO ESTEVÃO DA SILVA - Em frente ao Restaurante Veleiro Piatã - Processo 042160/2024",
+            "FABIANA DA CRUZ MANINHO - Avenida Beira Mar 2500 - Próximo ao Pizza Hut - Processo 225095/2024",
+            "FERNANDO DA SILVA LOPES - Em frente ao Hotel Magna Praia",
+            "FRANCISCA KARLA GOMES CAVALCANTE - Em frente Feirinha da Beira Mar - Processo 212457/2024",
+            "FRANCISCA NADJAMARA ANGELINO - Em frente à Barraca da Boa - Processo 182064/2022",
+            "FRANCISCO ADRIANO FERREIRA DA COSTA - Em frente ao Edifício Vista Dell Mare",
+            "FRANCISCO ALDESIO DIAS MACENA - Em frente ao Fortmar Hotel",
+            "FRANCISCO ALEXANDRE VIANA DO NASCIMENTO - Em frente ao Hotel Praiano - Processo 043302/2022",
+            "FRANCISCO ALVES DE ASSIS FILHO - Em frente à Barraca Satéhut - Processo 245026/2024",
+            "FRANCISCO BRUNO DE SOUSA LESSA - Em frente Feirinha da Beira Mar",
+            "FRANCISCO GEIFISSON NASCIMENTO GOMES - Em frente ao Landscape",
+            "FRANCISCO GILSON BORGES GOMES - Em frente à Barraca da Z",
+            "FRANCISCO GINARDIE LIMA GONÇALVES - Em frente à Barraca do Dedé - Processo 352954/2024",
+            "FRANCISCO LUCIANO DA SILVA - Em frente Feirinha da Beira Mar",
+            "GABRIEL LEAL SOUSA FREITAS - Em frente Feirinha da Beira Mar",
+            "GIORDANO BRUNO DA SILVA PAULA - Em frente ao Classic Residence",
+            "HERCULANO PESSOA DA SILVA - Locação Jardim Japonês - Processo 145432/2022",
+            "ISABEL MOURA LAURINDO - Em frente ao Hotel Magna Praia",
+            "ISRAEL GOMES RODRIGUES - Em frente Feirinha da Beira Mar",
+            "IVANETE FLORÊNCIO DA SILVA - Em frente Feirinha da Beira Mar - Por trás",
+            "JANE CAVALCANTE DE OLIVEIRA - Em frente ao Antigo Boteco",
+            "JEFFERSON CARLOS BARBOSA DA SILVA - Em frente Feirinha da Beira Mar - Lado Praia",
+            "JEFFERSON DA SILVA LIMA - Em frente Feirinha da Beira Mar",
+            "JESSÉ METZKER JÚNIOR - Em frente à Pague Menos da Praia de Iracema - P134868/2025",
+            "JOANA DARC CORDEIRO MESQUITA - Em frente Feirinha da Beira Mar - Processo 041662/2022",
+            "JOÃO VITOR MAGALHÃES DE OLIVEIRA - Em frente ao Terraço do Atlântico - Processo 149080/2022",
+            "JODSON CARLOS BARBOSA DA SILVA - Em frente ao McDonald's - Processo 353866/2024",
+            "JOHAN RODRÍGUEZ GUERRERO - Em frente ao Landscapes - Processo 266338/2024",
+            "JOHN EMERSON BARBOSA LOPES - Avenida Beira Mar, próximo ao Pizza Hut",
+            "JONAS LIMA SIMPLÍCIO - Em frente Feirinha da Beira Mar",
+            "JONATHAN BARBOSA GONÇALVES - Em frente ao Holliday Inn",
+            "JOSALEY JAMES BARRETO - Em frente ao Hotel Seara",
+            "JOSÉ BARBOSA DA SILVA JÚNIOR - Em frente à Dominos Pizzaria - Processo 256973/2024",
+            "JOSÉ LUCAS FERREIRA DA COSTA - Em frente ao McDonald's",
+            "JOSÉ RIBAMAR LEITE SILVA - Em frente ao Ponta Mar Hotel - Processo 242196/2024",
+            "JOSE LUIZ MORAIS DE CASTRO - Em frente Feirinha da Beira Mar - Lado Praia",
+            "JOSIEL BORGES DOS SANTOS - Locação Barão de Status - Processo 146642/2022",
+            "JOSIMAR SOUZA OLIVEIRA - Em frente Feirinha da Beira Mar - Lado Praia",
+            "JOZELITO PEREIRA DA SILVA - Em frente Feirinha da Beira Mar",
+            "KLEBER EDUARDO RODRIGUES SILVA - Barraca do Baiano - Processo 339131/2024",
+            "LEIDY ANNE DA CONCIEÇÃO DA SILVA - Em frente ao Ponta Mar Hotel",
+            "LIZANEA PONTES ARAÚJO - Em frente ao Antigo Beira Mar Grill - Processo 261618/2024",
+            "LOSANO LEOCÁDIO PEREIRA DA SILVA - Em frente ao Hotel Fortmar - Processo 186962/2024",
+            "LUCIANO OLIVEIRA MOURA - Em frente à Barraca Z - Processo 266294/2024",
+            "LUIZ CARLOS FERREIRA DA SILVA JÚNIOR - Em frente ao Ideal Clube - Processo 256905/2024",
+            "LUIZ CARLOS SOUZA DE ARAÚJO - Em frente ao Restaurante Veleiro Piatã",
+            "LUIZ FABIANO CASTRO DA SILVA - Em frente Feirinha da Beira Mar - Lado Praia",
+            "MANUELA RAFAEL CABRAL DA SILVA - Em frente ao Landscape",
+            "MARCEL VINCENT DAVID MAHENDREPERSAD - Em frente à Barraca da Boa",
+            "MARCOS DANILO CAVALCANTI LOPES - Em frente à Bebelu",
+            "MARIA LUCIEUDA DA SILVA - Em frente ao Hotel Classic - Processo 133865/2025",
+            "MATEUS ROCHA DA FROTA - Em frente ao Hotel Mareiro",
+            "MAYCOW JEFFERSON NASCIMENTO GOMES - Em frente à Barraca da Boa",
+            "MONICA VENÂNCIO DE SOUZA OLIVEIRA - Em frente ao Edifício Vista Dell Mare",
+            "PALOMA CARDOSO DE MORAES - Em frente Feirinha da Beira Mar - Lado Praia",
+            "PAULO ALBERTO DE FREITAS SANTOS - Avenida Beira Mar 1400",
+            "PAULO BERNARDO BENEVIDES PARENTE - Em frente à Barraca da Boa",
+            "PAULO VITOR CARVALHO TEIXEIRA - Em frente ao Brisa da Praia",
+            "RAIMUNDO JAILTON COELHO DA CONCEIÇÃO - Em frente ao Luzeiros - Processo 219213/2024",
+            "RAQUEL DOURADO GUERRA RODRIGUES - Em frente ao Hotel Brisa da Praia - Processo 133891/2025",
+            "RODRIGO CARNEIRO DE LIMA - Em frente ao McDonald's",
+            "RODRIGO FERREIRA COSTA - Em frente ao Hotel Brisa da Praia",
+            "RONALDO LOPES - Em frente Feirinha da Beira Mar - Lado Praia",
+            "ROSILDA CABRAL DE OLIVEIRA - Em frente ao McDonald's",
+            "RUBENS FREITAS DE ALMEIDA - Em frente ao Hotel Beira Mar - Processo 041450/2022 / Processo 135960/2025",
+            "SÁNIO MARCOS DA SILVA MARTINS - Em frente ao Ideal Clube",
+            "SILVIA CRISTINA GOMES CAETANO FERRO - Em frente à Estátua Iracema Guardian",
+            "TAYANE CORDEIRO FERRO - Em frente ao Hotel Magna Praia",
+            "VALERIA MARTINS ESTEVAM - Em frente ao Restaurante Flor de Sal - ao lado do McDonald's - Processo 154577/2022",
+            "VINICIO GARCIA CANDIDO - Em frente ao Hotel Holiday - Processo 231348/2024",
+            "VIRGINIA MAIA ABREU - Em frente à Estátua Iracema Guardian",
+            "VITÓRIA JOICE ROCHA NASCIMENTO LIMA - Em frente Feirinha da Beira Mar - Lado Praia",
+            "WELLANE MAYARA DA SILVA MOURA WANDERLEY - Em frente à 50 Sabores"
+        ];
 
-        // --- Configuração do Firebase ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-crud-app';
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        // setLogLevel('debug'); // Descomente para logs detalhados do Firestore
+        // Classe para gerenciar localStorage
+        class DataManager {
+            constructor() {
+                this.storageKey = 'promotores_data';
+                this.data = this.loadData();
+            }
 
-        let userId = null;
-        let registrationsCol;
-        let unsubscribe; // Para desligar o listener do onSnapshot
+            loadData() {
+                const stored = localStorage.getItem(this.storageKey);
+                if (stored) {
+                    return JSON.parse(stored);
+                } else {
+                    // Primeira vez - carregar dados iniciais
+                    const parsedData = initialData.map(this.parseLine).map((item, index) => ({
+                        id: Date.now() + index,
+                        ...item
+                    }));
+                    this.saveData(parsedData);
+                    return parsedData;
+                }
+            }
 
-        let allData = []; // Cache local para busca e exportação
+            saveData(data = this.data) {
+                localStorage.setItem(this.storageKey, JSON.stringify(data));
+                this.data = data;
+            }
 
-        // --- Elementos do DOM ---
-        const dataTable = document.getElementById('dataTable');
-        const addBtn = document.getElementById('addBtn');
-        const entryModal = document.getElementById('entryModal');
-        const entryForm = document.getElementById('entryForm');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const modalTitle = document.getElementById('modalTitle');
-        const entryIdInput = document.getElementById('entryId');
-        const nameInput = document.getElementById('name');
-        const locationInput = document.getElementById('location');
-        const processInput = document.getElementById('process');
-        const searchInput = document.getElementById('searchInput');
-        const noResults = document.getElementById('noResults');
-        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-        const exportPdfBtn = document.getElementById('exportPdfBtn');
-        const exportCsvBtn = document.getElementById('exportCsvBtn');
+            parseLine(line) {
+                const processRegex = /(Processo:?\s*[\d\/]+(?:\s*\/\s*P[\d\/]+)?|P[\d\/]+)$/i;
+                let name = '';
+                let location = '';
+                let process = '';
 
-        // --- Funções do Modal ---
+                const processMatch = line.match(processRegex);
+                let remainingLine = line;
+
+                if (processMatch) {
+                    process = processMatch[0].trim();
+                    remainingLine = line.replace(process, '').trim();
+                    if (remainingLine.endsWith(' -')) {
+                        remainingLine = remainingLine.slice(0, -2).trim();
+                    }
+                }
+
+                const nameParts = remainingLine.split(' - ');
+                name = nameParts[0].trim();
+                location = nameParts.slice(1).join(' - ').trim();
+
+                return { name, location, process };
+            }
+
+            add(item) {
+                const newItem = {
+                    id: Date.now(),
+                    ...item
+                };
+                this.data.push(newItem);
+                this.saveData();
+                return newItem;
+            }
+
+            update(id, item) {
+                const index = this.data.findIndex(d => d.id == id);
+                if (index !== -1) {
+                    this.data[index] = { ...this.data[index], ...item };
+                    this.saveData();
+                    return this.data[index];
+                }
+                return null;
+            }
+
+            delete(id) {
+                this.data = this.data.filter(d => d.id != id);
+                this.saveData();
+            }
+
+            getAll() {
+                return [...this.data].sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            search(term) {
+                if (!term) return this.getAll();
+                const searchTerm = term.toLowerCase();
+                return this.data.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    item.location.toLowerCase().includes(searchTerm) ||
+                    (item.process && item.process.toLowerCase().includes(searchTerm))
+                ).sort((a, b) => a.name.localeCompare(b.name));
+            }
+        }
+
+        // Inicializar gerenciador de dados
+        const dataManager = new DataManager();
+
+        // Elementos do DOM
+        const elements = {
+            dataTable: document.getElementById('dataTable'),
+            mobileCards: document.getElementById('mobileCards'),
+            addBtn: document.getElementById('addBtn'),
+            addBtnMobile: document.getElementById('addBtnMobile'),
+            entryModal: document.getElementById('entryModal'),
+            entryForm: document.getElementById('entryForm'),
+            cancelBtn: document.getElementById('cancelBtn'),
+            modalTitle: document.getElementById('modalTitle'),
+            entryIdInput: document.getElementById('entryId'),
+            nameInput: document.getElementById('name'),
+            locationInput: document.getElementById('location'),
+            processInput: document.getElementById('process'),
+            searchInput: document.getElementById('searchInput'),
+            emptyState: document.getElementById('emptyState'),
+            deleteConfirmModal: document.getElementById('deleteConfirmModal'),
+            cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
+            confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            exportPdfBtn: document.getElementById('exportPdfBtn'),
+            exportPdfBtnMobile: document.getElementById('exportPdfBtnMobile'),
+            exportCsvBtn: document.getElementById('exportCsvBtn'),
+            exportCsvBtnMobile: document.getElementById('exportCsvBtnMobile')
+        };
+
+        // Funções do Modal
         const openModal = (modal) => {
             modal.classList.remove('modal-hidden');
             modal.classList.add('modal-visible');
+            document.body.style.overflow = 'hidden';
         };
+
         const closeModal = (modal) => {
             modal.classList.add('modal-hidden');
             modal.classList.remove('modal-visible');
+            document.body.style.overflow = 'auto';
         };
 
-        // --- Lógica do CRUD ---
-        const renderTable = (data) => {
-            dataTable.innerHTML = '';
+        // Renderização
+        const renderData = (data) => {
             if (data.length === 0) {
-                noResults.classList.remove('hidden');
-                dataTable.innerHTML = '';
-            } else {
-                noResults.classList.add('hidden');
-                data.forEach((item, index) => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'border-b hover:bg-gray-50';
-                    tr.innerHTML = `
-                        <td class="p-4 text-center">${index + 1}</td>
-                        <td class="p-4">${item.name}</td>
-                        <td class="p-4">${item.location}</td>
-                        <td class="p-4">${item.process || 'N/A'}</td>
-                        <td class="p-4 text-center">
-                            <button class="edit-btn p-2 text-blue-600 hover:text-blue-800" data-id="${item.id}" title="Editar">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                            </button>
-                            <button class="delete-btn p-2 text-red-600 hover:text-red-800" data-id="${item.id}" title="Excluir">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                            </button>
-                        </td>
-                    `;
-                    dataTable.appendChild(tr);
-                });
-            }
-        };
-
-        const setupListeners = () => {
-             if (unsubscribe) unsubscribe(); // Garante que não haja listeners duplicados
-
-             unsubscribe = onSnapshot(registrationsCol, (snapshot) => {
-                allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allData.sort((a, b) => a.name.localeCompare(b.name)); // Ordena por nome
-                filterAndRender();
-            }, (error) => {
-                console.error("Erro ao buscar dados: ", error);
-                dataTable.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique o console.</td></tr>`;
-            });
-        };
-
-        const filterAndRender = () => {
-            const searchTerm = searchInput.value.toLowerCase();
-            if (!searchTerm) {
-                renderTable(allData);
+                elements.emptyState.classList.remove('hidden');
+                elements.dataTable.innerHTML = '';
+                elements.mobileCards.innerHTML = '';
                 return;
             }
-            const filteredData = allData.filter(item => 
-                item.name.toLowerCase().includes(searchTerm) ||
-                item.location.toLowerCase().includes(searchTerm) ||
-                (item.process && item.process.toLowerCase().includes(searchTerm))
-            );
-            renderTable(filteredData);
+
+            elements.emptyState.classList.add('hidden');
+            
+            // Renderizar tabela desktop
+            elements.dataTable.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 text-sm text-slate-600">${index + 1}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-800">${item.name}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${item.location}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${item.process || 'N/A'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button class="edit-btn p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all" data-id="${item.id}" title="Editar">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                        <button class="delete-btn p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all ml-2" data-id="${item.id}" title="Excluir">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Renderizar cards mobile
+            elements.mobileCards.innerHTML = data.map((item, index) => `
+                <div class="bg-white border border-slate-200 rounded-xl p-4 card-shadow fade-in">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">#${index + 1}</span>
+                        <div class="flex gap-2">
+                            <button class="edit-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" data-id="${item.id}">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button class="delete-btn p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all" data-id="${item.id}">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-2">${item.name}</h3>
+                    <p class="text-sm text-slate-600 mb-2">
+                        <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        ${item.location}
+                    </p>
+                    ${item.process ? `
+                        <p class="text-sm text-slate-500">
+                            <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            ${item.process}
+                        </p>
+                    ` : ''}
+                </div>
+            `).join('');
         };
-        
-        searchInput.addEventListener('input', filterAndRender);
-        
-        addBtn.addEventListener('click', () => {
-            modalTitle.textContent = 'Adicionar Registro';
-            entryForm.reset();
-            entryIdInput.value = '';
-            openModal(entryModal);
+
+        // Event Listeners
+        elements.searchInput.addEventListener('input', (e) => {
+            const results = dataManager.search(e.target.value);
+            renderData(results);
         });
 
-        cancelBtn.addEventListener('click', () => closeModal(entryModal));
+        [elements.addBtn, elements.addBtnMobile].forEach(btn => {
+            btn.addEventListener('click', () => {
+                elements.modalTitle.textContent = 'Adicionar Registro';
+                elements.entryForm.reset();
+                elements.entryIdInput.value = '';
+                openModal(elements.entryModal);
+            });
+        });
 
-        entryForm.addEventListener('submit', async (e) => {
+        elements.cancelBtn.addEventListener('click', () => closeModal(elements.entryModal));
+
+        elements.entryForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const id = entryIdInput.value;
+            const id = elements.entryIdInput.value;
             const data = {
-                name: nameInput.value,
-                location: locationInput.value,
-                process: processInput.value || ''
+                name: elements.nameInput.value.trim(),
+                location: elements.locationInput.value.trim(),
+                process: elements.processInput.value.trim()
             };
 
-            try {
-                if (id) {
-                    // Atualizar
-                    const docRef = doc(db, registrationsCol.path, id);
-                    await updateDoc(docRef, data);
-                } else {
-                    // Adicionar
-                    await addDoc(registrationsCol, data);
-                }
-                closeModal(entryModal);
-            } catch (error) {
-                console.error("Erro ao salvar registro:", error);
-                alert("Ocorreu um erro ao salvar. Tente novamente.");
-            }
-        });
-        
-        dataTable.addEventListener('click', async (e) => {
-            const editBtn = e.target.closest('.edit-btn');
-            if (editBtn) {
-                const id = editBtn.dataset.id;
-                const item = allData.find(d => d.id === id);
-                if(item) {
-                    modalTitle.textContent = 'Editar Registro';
-                    entryIdInput.value = item.id;
-                    nameInput.value = item.name;
-                    locationInput.value = item.location;
-                    processInput.value = item.process;
-                    openModal(entryModal);
-                }
+            if (id) {
+                dataManager.update(id, data);
+            } else {
+                dataManager.add(data);
             }
 
-            const deleteBtn = e.target.closest('.delete-btn');
-            if (deleteBtn) {
-                const id = deleteBtn.dataset.id;
-                confirmDeleteBtn.dataset.id = id;
-                openModal(deleteConfirmModal);
-            }
+            closeModal(elements.entryModal);
+            renderData(dataManager.getAll());
         });
 
-        cancelDeleteBtn.addEventListener('click', () => closeModal(deleteConfirmModal));
+        // Event delegation para botões de ação
+        [elements.dataTable, elements.mobileCards].forEach(container => {
+            container.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-btn');
+                const deleteBtn = e.target.closest('.delete-btn');
 
-        confirmDeleteBtn.addEventListener('click', async (e) => {
-            const id = e.target.dataset.id;
-            try {
-                await deleteDoc(doc(db, registrationsCol.path, id));
-                closeModal(deleteConfirmModal);
-            } catch (error) {
-                console.error("Erro ao excluir registro:", error);
-                 alert("Ocorreu um erro ao excluir. Tente novamente.");
-            }
-        });
-        
-        // --- Lógica de Exportação ---
-        exportPdfBtn.addEventListener('click', () => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            doc.autoTable({
-                head: [['#', 'Nome', 'Locação', 'Processo']],
-                body: allData.map((item, index) => [index + 1, item.name, item.location, item.process || 'N/A']),
-                styles: { font: 'Inter', fontStyle: 'normal' },
-            });
-
-            doc.save('registros.pdf');
-        });
-
-        exportCsvBtn.addEventListener('click', () => {
-            const headers = ['#', 'Nome', 'Locação', 'Processo'];
-            const rows = allData.map((item, index) => [
-                index + 1,
-                `"${item.name.replace(/"/g, '""')}"`,
-                `"${item.location.replace(/"/g, '""')}"`,
-                `"${(item.process || 'N/A').replace(/"/g, '""')}"`
-            ]);
-
-            let csvContent = "data:text/csv;charset=utf-8," 
-                + headers.join(",") + "\n" 
-                + rows.map(e => e.join(",")).join("\n");
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "registros.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-        
-        // --- Seed de Dados Iniciais ---
-        const initialData = [
-            "ADRIANA COLARES DE SOUZA LIMA - Em frente ao Bourbon Fortaleza Hotel - Processo 223834/2024", "ALESSANDRO WILLAMI DE SOUSA - Em frente Feirinha da Beira Mar", "ALEXANDRE RUFINO DE ARAÚJO - Em frente ao Hotel Praia Mar - Processo 234488/2024", "ANA BEATRIZ COELHO - Em frente Feirinha da Beira Mar - Lado Praia", "ANA PAULA DA SILVA ISIDORO - Em frente ao Hotel Beira Mar", "ANA REBECA SILVA CÂMARA - Em frente ao Hotel Classic", "ANIETE PEREIRA DA COSTA - Em frente ao Hotel Praiano", "ANTONIO DE OLIVEIRA DA SILVA - Em frente Feirinha da Beira Mar", "ANTONIA JAILSA PONTES LIMA - Em frente à Barraca da Boa - Processo 141999/2024", "ANTÔNIA SARAH DA CONCEIÇÃO ALMEIDA - Em frente Feirinha da Beira Mar - Lado Praia", "ANTÔNIO GEOVANE ANDRADE DE ARAÚJO - Em frente ao Hotel Gran Marquise - Processo 042390/2022", "ANTÔNIO MARCOS RIBEIRO DE SOUSA - Em frente ao Hotel Praiano", "ANTONIO RIVALDO DO PRADO SILVA - Em frente ao condomínio Vitral dos Mares - Processo 142454/2022", "APARECIDA ALVES GOMES - Em frente ao Mercado dos Peixes - Processo 049322/2022", "ATILA ALVES MARINHEIRO - Esquina do Habibs, em frente ao quiosque Vitor do Coco", "AUGUSTO CEZAR DA SILVA MAGALHÃES - Em frente ao Edifício Catamarã", "AURILENE ALVES DA SILVA - Em frente ao Antigo", "BRUNO DANIEL RODRIGUES COUTINHO - Feirinha Beira Mar/Barraca do Baiano", "BRUNO LIMA SOUZA - Pizza Hutts - Processo 204938/2024", "CARLOS EMANUEL BEZERRA ALVES - Em frente à 50 Sabores - Processo 041383/2024", "DARIELSON DE SOUZA SILVA - Em frente Feirinha da Beira Mar - Processo 046397/2022", "DIEGO ARAÚJO FERREIRA - Em frente ao Landscape", "EDGAR PAULINO FEITOSA - Em frente à Pague Menos da Praia de Iracema - Processo: 168064/2024", "EDISON MARQUES DE OLIVEIRA FILHO - Em frente ao Mercado dos Peixes", "EDNA MARIA DA SILVA SEMINO - Em frente à Barraca SateRuti", "ELIEZER GOMES DE MELO JÚNIOR - Em frente à Pague Menos da Praia de Iracema - P12608872024", "ELINEIDE NAZARÉ SODRÉ FARRAPEIRA - Em frente ao Blue Tree - Processo 126213/2024 / P133947/2025", "EMÍDIO ESTEVÃO DA SILVA - Em frente ao Restaurante Veleiro Piatã - Processo 042160/2024", "FABIANA DA CRUZ MANINHO - Avenida Beira Mar 2500 - Próximo ao Pizza Hut - Processo 225095/2024", "FERNANDO DA SILVA LOPES - Em frente ao Hotel Magna Praia", "FRANCISCA KARLA GOMES CAVALCANTE - Em frente Feirinha da Beira Mar - Processo 212457/2024", "FRANCISCA NADJAMARA ANGELINO - Em frente à Barraca da Boa - Processo 182064/2022", "FRANCISCO ADRIANO FERREIRA DA COSTA - Em frente ao Edifício Vista Dell Mare", "FRANCISCO ALDESIO DIAS MACENA - Em frente ao Fortmar Hotel", "FRANCISCO ALEXANDRE VIANA DO NASCIMENTO - Em frente ao Hotel Praiano - Processo 043302/2022", "FRANCISCO ALVES DE ASSIS FILHO - Em frente à Barraca Satéhut - Processo 245026/2024", "FRANCISCO BRUNO DE SOUSA LESSA - Em frente Feirinha da Beira Mar", "FRANCISCO GEIFISSON NASCIMENTO GOMES - Em frente ao Landscape", "FRANCISCO GILSON BORGES GOMES - Em frente à Barraca da Z", "FRANCISCO GINARDIE LIMA GONÇALVES - Em frente à Barraca do Dedé - Processo 352954/2024", "FRANCISCO LUCIANO DA SILVA - Em frente Feirinha da Beira Mar", "GABRIEL LEAL SOUSA FREITAS - Em frente Feirinha da Beira Mar", "GIORDANO BRUNO DA SILVA PAULA - Em frente ao Classic Residence", "HERCULANO PESSOA DA SILVA - Locação Jardim Japonês - Processo 145432/2022", "ISABEL MOURA LAURINDO - Em frente ao Hotel Magna Praia", "ISRAEL GOMES RODRIGUES - Em frente Feirinha da Beira Mar", "IVANETE FLORÊNCIO DA SILVA - Em frente Feirinha da Beira Mar - Por trás", "JANE CAVALCANTE DE OLIVEIRA - Em frente ao Antigo Boteco", "JEFFERSON CARLOS BARBOSA DA SILVA - Em frente Feirinha da Beira Mar - Lado Praia", "JEFFERSON DA SILVA LIMA - Em frente Feirinha da Beira Mar", "JESSÉ METZKER JÚNIOR - Em frente à Pague Menos da Praia de Iracema - P134868/2025", "JOANA DARC CORDEIRO MESQUITA - Em frente Feirinha da Beira Mar - Processo 041662/2022", "JOÃO VITOR MAGALHÃES DE OLIVEIRA - Em frente ao Terraço do Atlântico - Processo 149080/2022", "JODSON CARLOS BARBOSA DA SILVA - Em frente ao McDonald's - Processo 353866/2024", "JOHAN RODRÍGUEZ GUERRERO - Em frente ao Landscapes - Processo 266338/2024", "JOHN EMERSON BARBOSA LOPES - Avenida Beira Mar, próximo ao Pizza Hut", "JONAS LIMA SIMPLÍCIO - Em frente Feirinha da Beira Mar", "JONATHAN BARBOSA GONÇALVES - Em frente ao Holliday Inn", "JOSALEY JAMES BARRETO - Em frente ao Hotel Seara", "JOSÉ BARBOSA DA SILVA JÚNIOR - Em frente à Dominos Pizzaria - Processo 256973/2024", "JOSÉ LUCAS FERREIRA DA COSTA - Em frente ao McDonald's", "JOSÉ RIBAMAR LEITE SILVA - Em frente ao Ponta Mar Hotel - Processo 242196/2024", "JOSE LUIZ MORAIS DE CASTRO - Em frente Feirinha da Beira Mar - Lado Praia", "JOSIEL BORGES DOS SANTOS - Locação Barão de Status - Processo 146642/2022", "JOSIMAR SOUZA OLIVEIRA - Em frente Feirinha da Beira Mar - Lado Praia", "JOZELITO PEREIRA DA SILVA - Em frente Feirinha da Beira Mar", "KLEBER EDUARDO RODRIGUES SILVA - Barraca do Baiano - Processo 339131/2024", "LEIDY ANNE DA CONCIEÇÃO DA SILVA - Em frente ao Ponta Mar Hotel", "LIZANEA PONTES ARAÚJO - Em frente ao Antigo Beira Mar Grill - Processo 261618/2024", "LOSANO LEOCÁDIO PEREIRA DA SILVA - Em frente ao Hotel Fortmar - Processo 186962/2024", "LUCIANO OLIVEIRA MOURA - Em frente à Barraca Z - Processo 266294/2024", "LUIZ CARLOS FERREIRA DA SILVA JÚNIOR - Em frente ao Ideal Clube - Processo 256905/2024", "LUIZ CARLOS SOUZA DE ARAÚJO - Em frente ao Restaurante Veleiro Piatã", "LUIZ FABIANO CASTRO DA SILVA - Em frente Feirinha da Beira Mar - Lado Praia", "MANUELA RAFAEL CABRAL DA SILVA - Em frente ao Landscape", "MARCEL VINCENT DAVID MAHENDREPERSAD - Em frente à Barraca da Boa", "MARCOS DANILO CAVALCANTI LOPES - Em frente à Bebelu", "MARIA LUCIEUDA DA SILVA - Em frente ao Hotel Classic - Processo 133865/2025", "MATEUS ROCHA DA FROTA - Em frente ao Hotel Mareiro", "MAYCOW JEFFERSON NASCIMENTO GOMES - Em frente à Barraca da Boa", "MONICA VENÂNCIO DE SOUZA OLIVEIRA - Em frente ao Edifício Vista Dell Mare", "PALOMA CARDOSO DE MORAES - Em frente Feirinha da Beira Mar - Lado Praia", "PAULO ALBERTO DE FREITAS SANTOS - Avenida Beira Mar 1400", "PAULO BERNARDO BENEVIDES PARENTE - Em frente à Barraca da Boa", "PAULO VITOR CARVALHO TEIXEIRA - Em frente ao Brisa da Praia", "RAIMUNDO JAILTON COELHO DA CONCEIÇÃO - Em frente ao Luzeiros - Processo 219213/2024", "RAQUEL DOURADO GUERRA RODRIGUES - Em frente ao Hotel Brisa da Praia - Processo 133891/2025", "RODRIGO CARNEIRO DE LIMA - Em frente ao McDonald's", "RODRIGO FERREIRA COSTA - Em frente ao Hotel Brisa da Praia", "RONALDO LOPES - Em frente Feirinha da Beira Mar - Lado Praia", "ROSILDA CABRAL DE OLIVEIRA - Em frente ao McDonald's", "RUBENS FREITAS DE ALMEIDA - Em frente ao Hotel Beira Mar - Processo 041450/2022 / Processo 135960/2025", "SÁNIO MARCOS DA SILVA MARTINS - Em frente ao Ideal Clube", "SILVIA CRISTINA GOMES CAETANO FERRO - Em frente à Estátua Iracema Guardian", "TAYANE CORDEIRO FERRO - Em frente ao Hotel Magna Praia", "VALERIA MARTINS ESTEVAM - Em frente ao Restaurante Flor de Sal - ao lado do McDonald's - Processo 154577/2022", "VINICIO GARCIA CANDIDO - Em frente ao Hotel Holiday - Processo 231348/2024", "VIRGINIA MAIA ABREU - Em frente à Estátua Iracema Guardian", "VITÓRIA JOICE ROCHA NASCIMENTO LIMA - Em frente Feirinha da Beira Mar - Lado Praia", "WELLANE MAYARA DA SILVA MOURA WANDERLEY - Em frente à 50 Sabores"
-        ];
-        
-        function parseLine(line) {
-            const processRegex = /(Processo:?\s*[\d\/]+(?:\s*\/\s*P[\d\/]+)?|P[\d\/]+)$/i;
-            let name = '';
-            let location = '';
-            let process = '';
-
-            const processMatch = line.match(processRegex);
-            let remainingLine = line;
-
-            if (processMatch) {
-                process = processMatch[0].trim();
-                remainingLine = line.replace(process, '').trim();
-                if (remainingLine.endsWith(' -')) {
-                    remainingLine = remainingLine.slice(0, -2).trim();
-                }
-            }
-
-            const nameParts = remainingLine.split(' - ');
-            name = nameParts[0].trim();
-            location = nameParts.slice(1).join(' - ').trim();
-
-            return { name, location, process };
-        }
-
-        async function seedDatabase() {
-            try {
-                const snapshot = await getDocs(registrationsCol);
-                if (snapshot.empty) {
-                    console.log("Banco de dados vazio. Populando com dados iniciais...");
-                    const parsedData = initialData.map(parseLine);
-                    for (const item of parsedData) {
-                        await addDoc(registrationsCol, item);
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
+                    const item = dataManager.data.find(d => d.id == id);
+                    if (item) {
+                        elements.modalTitle.textContent = 'Editar Registro';
+                        elements.entryIdInput.value = item.id;
+                        elements.nameInput.value = item.name;
+                        elements.locationInput.value = item.location;
+                        elements.processInput.value = item.process || '';
+                        openModal(elements.entryModal);
                     }
-                    console.log("Dados iniciais inseridos com sucesso.");
-                } else {
-                    console.log("O banco de dados já contém dados.");
                 }
-            } catch (error) {
-                console.error("Erro ao popular banco de dados:", error);
-            }
-        }
-        
-        // --- Inicialização da Aplicação ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                // Usando um caminho privado para os dados do usuário
-                const collectionPath = `artifacts/${appId}/users/${userId}/registrations`;
-                registrationsCol = collection(db, collectionPath);
-                await seedDatabase();
-                setupListeners();
-            }
-        });
-        
-        async function initializeAuth() {
-            try {
-                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (token) {
-                    await signInWithCustomToken(auth, token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Authentication failed:", error);
-            }
-        }
-        
-        initializeAuth();
 
+                if (deleteBtn) {
+                    const id = deleteBtn.dataset.id;
+                    elements.confirmDeleteBtn.dataset.id = id;
+                    openModal(elements.deleteConfirmModal);
+                }
+            });
+        });
+
+        elements.cancelDeleteBtn.addEventListener('click', () => closeModal(elements.deleteConfirmModal));
+
+        elements.confirmDeleteBtn.addEventListener('click', (e) => {
+            const id = e.target.dataset.id;
+            dataManager.delete(id);
+            closeModal(elements.deleteConfirmModal);
+            renderData(dataManager.getAll());
+        });
+
+        // Exportação PDF
+        [elements.exportPdfBtn, elements.exportPdfBtnMobile].forEach(btn => {
+            btn.addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const data = dataManager.getAll();
+                doc.autoTable({
+                    head: [['#', 'Nome', 'Locação', 'Processo']],
+                    body: data.map((item, index) => [
+                        index + 1, 
+                        item.name, 
+                        item.location, 
+                        item.process || 'N/A'
+                    ]),
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [59, 130, 246] }
+                });
+
+                doc.save('promotores-registros.pdf');
+            });
+        });
+
+        // Exportação CSV
+        [elements.exportCsvBtn, elements.exportCsvBtnMobile].forEach(btn => {
+            btn.addEventListener('click', () => {
+                const data = dataManager.getAll();
+                const headers = ['#', 'Nome', 'Locação', 'Processo'];
+                const rows = data.map((item, index) => [
+                    index + 1,
+                    `"${item.name.replace(/"/g, '""')}"`,
+                    `"${item.location.replace(/"/g, '""')}"`,
+                    `"${(item.process || 'N/A').replace(/"/g, '""')}"`
+                ]);
+
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + headers.join(",") + "\n" 
+                    + rows.map(e => e.join(",")).join("\n");
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "promotores-registros.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+
+        // Fechar modais ao clicar fora
+        [elements.entryModal, elements.deleteConfirmModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal(modal);
+                }
+            });
+        });
+
+        // Inicialização
+        renderData(dataManager.getAll());
     </script>
 </body>
 </html>
-
-
